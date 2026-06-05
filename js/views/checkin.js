@@ -7,6 +7,112 @@ const CheckinView = {
   mockScannerTimeout: null,
   html5QrCode: null,
   activeTab: 'real', // 'real' or 'mock'
+  resolvedStudent: null,
+
+  handleIdInput() {
+    const codeInput = document.getElementById('chk-code');
+    const idInput = document.getElementById('chk-stud-id');
+    const previewDiv = document.getElementById('student-info-preview');
+    const submitBtn = document.getElementById('btn-submit-checkin');
+
+    if (!codeInput || !idInput || !previewDiv || !submitBtn) return;
+
+    const code = codeInput.value.trim().toUpperCase();
+    const studentId = idInput.value.trim();
+
+    // Reset preview and button states if inputs are empty
+    if (!code || !studentId) {
+      previewDiv.classList.add('d-none');
+      previewDiv.innerHTML = '';
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // 1. Find session by code
+    const session = window.db.getSessionByCode(code);
+    if (!session) {
+      previewDiv.classList.remove('d-none');
+      previewDiv.innerHTML = `
+        <div style="background-color: var(--color-absent-light); color: var(--color-absent); border: 1px dashed var(--color-absent); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.9rem; font-weight: 600;">
+          ❌ ไม่พบรหัสรอบเรียน "${code}" หรือรอบเรียนนี้ยังไม่เปิด
+        </div>
+      `;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    if (session.status !== 'Open') {
+      previewDiv.classList.remove('d-none');
+      previewDiv.innerHTML = `
+        <div style="background-color: var(--color-absent-light); color: var(--color-absent); border: 1px dashed var(--color-absent); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.9rem; font-weight: 600;">
+          ❌ รอบเรียนนี้ปิดระบบไปแล้ว ไม่สามารถเช็คชื่อได้
+        </div>
+      `;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // 2. Find course
+    const course = window.db.getCourseById(session.course_id);
+    if (!course) {
+      previewDiv.classList.remove('d-none');
+      previewDiv.innerHTML = `
+        <div style="background-color: var(--color-absent-light); color: var(--color-absent); border: 1px dashed var(--color-absent); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.9rem; font-weight: 600;">
+          ❌ เกิดข้อผิดพลาด: ไม่พบรายวิชาที่ผูกกับรอบเรียนนี้
+        </div>
+      `;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // 3. Find student
+    const student = window.db.getStudentBySchoolId(studentId, session.course_id);
+    if (!student) {
+      previewDiv.classList.remove('d-none');
+      previewDiv.innerHTML = `
+        <div style="background-color: var(--color-absent-light); color: var(--color-absent); border: 1px dashed var(--color-absent); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.9rem; font-weight: 600;">
+          ❌ ไม่พบรหัสนักศึกษา "${studentId}" ในรายวิชานี้ (${course.course_code})
+        </div>
+      `;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // Check if student has already checked in
+    const records = window.db.getRecordsBySession(session.id);
+    const existingRecord = records.find(r => r.student_id === studentId);
+    if (existingRecord && existingRecord.checkin_time) {
+      const checkinTimeStr = new Date(existingRecord.checkin_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      previewDiv.classList.remove('d-none');
+      previewDiv.innerHTML = `
+        <div style="background-color: var(--color-absent-light); color: var(--color-absent); border: 1px dashed var(--color-absent); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.9rem; font-weight: 600;">
+          ❌ รหัสนักศึกษา "${studentId}" ได้เช็คชื่อไปแล้วเมื่อเวลา ${checkinTimeStr} น.
+        </div>
+      `;
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // Student found! Display info
+    this.resolvedStudent = student;
+    previewDiv.classList.remove('d-none');
+    previewDiv.innerHTML = `
+      <div style="background-color: var(--color-present-light); border: 1px solid var(--color-present); padding: 1rem; border-radius: var(--radius-lg); font-size: 0.95rem; display: flex; flex-direction: column; gap: 0.35rem;">
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem; color: var(--color-present);">
+          <span>✓ พบข้อมูลนักศึกษา</span>
+        </div>
+        <div style="color: var(--color-text-main); font-weight: 600; font-size: 1.1rem; margin-top: 0.25rem;">
+          ชื่อ-สกุล: ${student.full_name}
+        </div>
+        <div style="color: var(--color-text-muted); font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.15rem;">
+          <span>รหัสประจำตัว: ${student.student_id}</span>
+          <span>วิชา: ${course.course_code} - ${course.course_name} (${course.section})</span>
+          <span>ผู้สอน: ${course.teacher_name}</span>
+        </div>
+      </div>
+    `;
+    submitBtn.disabled = false;
+  },
 
   render(prefilledCode = '') {
     // Stop camera if view is redrawn
@@ -62,10 +168,8 @@ const CheckinView = {
               <input class="form-control" type="text" id="chk-stud-id" placeholder="เช่น 66010101" required />
             </div>
 
-            <div class="form-group">
-              <label class="form-label" for="chk-name">ชื่อ-นามสกุล (Full Name)</label>
-              <input class="form-control" type="text" id="chk-name" placeholder="เช่น เกียรติศักดิ์ อุดมดี" required />
-            </div>
+             <!-- Student dynamic preview panel -->
+            <div id="student-info-preview" class="d-none" style="margin-top: 1rem; margin-bottom: 1rem;"></div>
 
             <button class="btn btn-primary w-full mt-2" type="submit" id="btn-submit-checkin" style="padding: 0.8rem; font-size: 1.05rem;">
               <svg viewBox="0 0 24 24" style="width: 18px; height: 18px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -77,6 +181,27 @@ const CheckinView = {
     `;
 
     document.getElementById('app-view-content').innerHTML = content;
+
+    // Reset resolved student cache
+    this.resolvedStudent = null;
+
+    // Attach real-time validation listeners
+    const codeInput = document.getElementById('chk-code');
+    const idInput = document.getElementById('chk-stud-id');
+    const submitBtn = document.getElementById('btn-submit-checkin');
+
+    if (codeInput && idInput && submitBtn) {
+      submitBtn.disabled = true;
+
+      const onInput = () => this.handleIdInput();
+      codeInput.addEventListener('input', onInput);
+      idInput.addEventListener('input', onInput);
+
+      // Trigger immediately if already pre-filled
+      if (codeInput.value || idInput.value) {
+        this.handleIdInput();
+      }
+    }
   },
 
   // Toggle open/close scanner
@@ -173,6 +298,7 @@ const CheckinView = {
             document.getElementById('chk-code').value = sessionCode.toUpperCase();
             this.toggleScannerDrawer(); // Close camera drawer
             window.UIComponents.showToast('ดึงรหัสเข้าเรียนผ่านกล้องสำเร็จ!');
+            this.handleIdInput();
             document.getElementById('chk-stud-id').focus();
           },
           (errorMessage) => {
@@ -230,6 +356,7 @@ const CheckinView = {
       document.getElementById('chk-code').value = code.toUpperCase();
       this.toggleScannerDrawer();
       window.UIComponents.showToast('จำลองดึงรหัสสแกนสำเร็จ!');
+      this.handleIdInput();
       
       // Reset mock container HTML
       container.innerHTML = `
@@ -250,7 +377,12 @@ const CheckinView = {
 
     const code = document.getElementById('chk-code').value.trim();
     const studentId = document.getElementById('chk-stud-id').value.trim();
-    const studentName = document.getElementById('chk-name').value.trim();
+
+    if (!this.resolvedStudent || this.resolvedStudent.student_id !== studentId) {
+      alert('กรุณากรอกรหัสนักศึกษาที่ถูกต้องเพื่อตรวจสอบข้อมูลก่อนกดบันทึก');
+      return;
+    }
+    const studentName = this.resolvedStudent.full_name;
 
     const submitBtn = document.getElementById('btn-submit-checkin');
     const submitBtnSpan = submitBtn.querySelector('span');
