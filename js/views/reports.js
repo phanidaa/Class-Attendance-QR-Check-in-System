@@ -25,17 +25,35 @@ const ReportsView = {
       this.selectedSessionId = sorted[0].id;
     }
 
-    // Filtered records list
+    // Filtered records list and stats count
     let filteredRecords = [];
     let currentSession = null;
     let currentCourse = null;
+
+    let presentCount = 0;
+    let lateCount = 0;
+    let absentCount = 0;
+    let excusedCount = 0;
+    let totalStudents = 0;
+    let attendedCount = 0;
 
     if (this.selectedSessionId) {
       currentSession = window.db.getSessionById(this.selectedSessionId);
       currentCourse = window.db.getCourseById(this.selectedCourseId);
       
       const allRecords = window.db.getRecordsBySession(this.selectedSessionId);
-      
+      totalStudents = allRecords.length;
+
+      // Calculate stats based on all session records (unfiltered)
+      allRecords.forEach(r => {
+        if (r.status === 'Present') presentCount++;
+        else if (r.status === 'Late') lateCount++;
+        else if (r.status === 'Absent') absentCount++;
+        else if (r.status === 'Excused') excusedCount++;
+      });
+      attendedCount = presentCount + lateCount;
+
+      // Filter records for table view
       filteredRecords = allRecords.filter(r => {
         // Status filter
         if (this.selectedStatus !== 'All' && r.status !== this.selectedStatus) return false;
@@ -51,15 +69,6 @@ const ReportsView = {
         return true;
       });
     }
-
-    // Attendance stats for selected session
-    let presentCount = 0, lateCount = 0, absentCount = 0, excusedCount = 0;
-    filteredRecords.forEach(r => {
-      if (r.status === 'Present') presentCount++;
-      else if (r.status === 'Late') lateCount++;
-      else if (r.status === 'Absent') absentCount++;
-      else if (r.status === 'Excused') excusedCount++;
-    });
 
     const content = `
       <div class="content-card mb-3">
@@ -97,7 +106,7 @@ const ReportsView = {
           </div>
 
           <!-- Status Select -->
-          <div class="filter-item" style="max-width: 150px;">
+          <div class="filter-item filter-item-status">
             <label class="form-label">กรองตามสถานะ</label>
             <select class="form-control" id="rep-status-select" onchange="ReportsView.handleStatusChange(this.value)">
               <option value="All" ${this.selectedStatus === 'All' ? 'selected' : ''}>ทั้งหมด</option>
@@ -109,7 +118,7 @@ const ReportsView = {
           </div>
 
           <!-- Text Search -->
-          <div class="filter-item" style="flex: 1.5; min-width: 200px;">
+          <div class="filter-item filter-item-search">
             <label class="form-label">ค้นหานักศึกษา</label>
             <input class="form-control" type="text" id="rep-search-input" placeholder="พิมพ์รหัสหรือชื่อเพื่อค้นหา..." value="${this.searchQuery}" oninput="ReportsView.handleSearch(this.value)" />
           </div>
@@ -118,20 +127,44 @@ const ReportsView = {
 
       <!-- Quick Session Stats Overview -->
       ${currentSession ? `
-        <div class="dashboard-grid mb-3" style="grid-template-columns: repeat(4, 1fr); gap: 1rem;">
-          <div style="background-color: var(--color-card-bg); padding: 0.8rem; border-radius: var(--radius-md); text-align: center; border-left: 4px solid var(--color-present); box-shadow: var(--shadow-sm);">
+        <div class="dashboard-grid mb-3 report-stats-grid">
+          <!-- Total Card -->
+          <div class="stat-tab-card ${this.selectedStatus === 'All' ? 'active' : ''}" 
+               style="border-left: 4px solid var(--color-crimson);" 
+               onclick="ReportsView.handleStatusChange('All')"
+               title="คลิกเพื่อดูนักเรียนทั้งหมด">
+            <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;">นักเรียนทั้งหมด (Total)</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-crimson);">${attendedCount}/${totalStudents} คน</div>
+          </div>
+          <!-- Present Card -->
+          <div class="stat-tab-card ${this.selectedStatus === 'Present' ? 'active' : ''}" 
+               style="border-left: 4px solid var(--color-present);" 
+               onclick="ReportsView.handleStatusChange('Present')"
+               title="คลิกเพื่อดูคนที่มาตรงเวลา">
             <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;">มาตรงเวลา (Present)</div>
             <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-present);">${presentCount} คน</div>
           </div>
-          <div style="background-color: var(--color-card-bg); padding: 0.8rem; border-radius: var(--radius-md); text-align: center; border-left: 4px solid var(--color-late); box-shadow: var(--shadow-sm);">
+          <!-- Late Card -->
+          <div class="stat-tab-card ${this.selectedStatus === 'Late' ? 'active' : ''}" 
+               style="border-left: 4px solid var(--color-late);" 
+               onclick="ReportsView.handleStatusChange('Late')"
+               title="คลิกเพื่อดูคนมาสาย">
             <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;">มาเรียนสาย (Late)</div>
             <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-late);">${lateCount} คน</div>
           </div>
-          <div style="background-color: var(--color-card-bg); padding: 0.8rem; border-radius: var(--radius-md); text-align: center; border-left: 4px solid var(--color-absent); box-shadow: var(--shadow-sm);">
+          <!-- Absent Card -->
+          <div class="stat-tab-card ${this.selectedStatus === 'Absent' ? 'active' : ''}" 
+               style="border-left: 4px solid var(--color-absent);" 
+               onclick="ReportsView.handleStatusChange('Absent')"
+               title="คลิกเพื่อดูคนขาดเรียน">
             <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;">ขาดเรียน (Absent)</div>
             <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-absent);">${absentCount} คน</div>
           </div>
-          <div style="background-color: var(--color-card-bg); padding: 0.8rem; border-radius: var(--radius-md); text-align: center; border-left: 4px solid var(--color-excused); box-shadow: var(--shadow-sm);">
+          <!-- Excused Card -->
+          <div class="stat-tab-card ${this.selectedStatus === 'Excused' ? 'active' : ''}" 
+               style="border-left: 4px solid var(--color-excused);" 
+               onclick="ReportsView.handleStatusChange('Excused')"
+               title="คลิกเพื่อดูคนลา">
             <div style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;">ลาป่วย/ลากิจ (Excused)</div>
             <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-excused);">${excusedCount} คน</div>
           </div>
@@ -147,6 +180,7 @@ const ReportsView = {
                 <th>รหัสนักศึกษา</th>
                 <th>ชื่อ-นามสกุล</th>
                 <th>เวลาสแกนจริง</th>
+                <th>พิกัด GPS</th>
                 <th>วิธีการเช็คชื่อ</th>
                 <th style="width: 140px;">สถานะการเข้าเรียน</th>
                 <th>หมายเหตุ / รายละเอียดเพิ่มเติม</th>
@@ -155,11 +189,11 @@ const ReportsView = {
             <tbody>
               ${!this.selectedSessionId ? `
                 <tr>
-                  <td colspan="7" class="text-center text-muted" style="padding: 2.5rem;">ยังไม่มีข้อมูลเช็คชื่อสำหรับค้นหาในขณะนี้</td>
+                  <td colspan="8" class="text-center text-muted" style="padding: 2.5rem;">ยังไม่มีข้อมูลเช็คชื่อสำหรับค้นหาในขณะนี้</td>
                 </tr>
               ` : filteredRecords.length === 0 ? `
                 <tr>
-                  <td colspan="7" class="text-center text-muted" style="padding: 2.5rem;">ไม่พบข้อมูลสอดคล้องกับตัวกรองหรือคำค้นหา</td>
+                  <td colspan="8" class="text-center text-muted" style="padding: 2.5rem;">ไม่พบข้อมูลสอดคล้องกับตัวกรองหรือคำค้นหา</td>
                 </tr>
               ` : filteredRecords.map((r, index) => {
                 let badgeClass = 'badge-present';
@@ -172,12 +206,19 @@ const ReportsView = {
                   ? new Date(r.checkin_time).toLocaleTimeString('th-TH') + ' น.' 
                   : '-';
 
+                const gpsLink = r.gps_coords
+                  ? `<a href="https://www.google.com/maps?q=${r.gps_coords.latitude},${r.gps_coords.longitude}" target="_blank" title="ดูใน Google Maps" style="color: var(--color-crimson); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;">
+                       📍 ${r.gps_coords.latitude.toFixed(5)}, ${r.gps_coords.longitude.toFixed(5)}
+                     </a>`
+                  : '<span class="text-muted">-</span>';
+
                 return `
                   <tr>
                     <td>${index + 1}</td>
                     <td class="font-semibold">${r.student_id}</td>
                     <td>${r.student_name}</td>
                     <td>${timeStr}</td>
+                    <td>${gpsLink}</td>
                     <td><span class="text-muted" style="font-size: 0.85rem;">${r.checkin_time ? r.checkin_method : '-'}</span></td>
                     <td>
                       <!-- Editable Status Selector triggers directly on change -->
@@ -271,10 +312,11 @@ const ReportsView = {
     const recordsToExport = window.db.getRecordsBySession(this.selectedSessionId);
 
     // Build CSV Content
-    const headers = ['ลำดับ', 'รหัสนักศึกษา', 'ชื่อ-นามสกุล', 'เวลาเช็คชื่อ', 'วิธีการเช็คชื่อ', 'สถานะ', 'หมายเหตุ'];
+    const headers = ['ลำดับ', 'รหัสนักศึกษา', 'ชื่อ-นามสกุล', 'เวลาเช็คชื่อ', 'พิกัด GPS', 'วิธีการเช็คชื่อ', 'สถานะ', 'หมายเหตุ'];
     
     const rows = recordsToExport.map((r, index) => {
       const timeStr = r.checkin_time ? new Date(r.checkin_time).toLocaleTimeString('th-TH') : '-';
+      const gpsVal = r.gps_coords ? `${r.gps_coords.latitude}, ${r.gps_coords.longitude}` : '-';
       
       let statusLabel = 'มาเรียน';
       if (r.status === 'Late') statusLabel = 'สาย';
@@ -286,6 +328,7 @@ const ReportsView = {
         `="${r.student_id}"`, // wraps ID in formula to preserve leading zeroes in Excel!
         r.student_name,
         timeStr,
+        gpsVal,
         r.checkin_time ? r.checkin_method : '-',
         statusLabel,
         r.note || ''

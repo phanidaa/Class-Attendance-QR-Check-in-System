@@ -30,6 +30,7 @@ class AttendanceStorage {
           semester: '1/2026',
           academic_year: '2026',
           teacher_name: 'Dr. Jirapat Srivorasing',
+          max_students: 40,
           created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         },
         {
@@ -40,6 +41,7 @@ class AttendanceStorage {
           semester: '1/2026',
           academic_year: '2026',
           teacher_name: 'Asst. Prof. Somchai Pattana',
+          max_students: 30,
           created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         }
       ];
@@ -224,6 +226,16 @@ class AttendanceStorage {
         students[idx] = { ...students[idx], ...student };
       }
     } else {
+      // Validate Course Capacity Limit
+      const course = this.getCourseById(student.course_id);
+      if (course) {
+        const enrolled = this.getStudentsByCourse(student.course_id);
+        const maxCapacity = course.max_students || 40;
+        if (enrolled.length >= maxCapacity) {
+          throw new Error(`รายวิชานี้เต็มความจุแล้ว (รับได้สูงสุด ${maxCapacity} คน)`);
+        }
+      }
+
       student.id = 'stud-' + Math.random().toString(36).substr(2, 9);
       student.created_at = new Date().toISOString();
       students.push(student);
@@ -385,7 +397,7 @@ class AttendanceStorage {
   }
 
   // Student Self Check-in Logic
-  checkinStudent(sessionCode, studentId, studentName) {
+  checkinStudent(sessionCode, studentId, studentName, gpsCoords = null) {
     const session = this.getSessionByCode(sessionCode);
     if (!session) {
       throw new Error('ไม่พบรหัสเช็คชื่อ หรือรหัสนี้ไม่ถูกต้อง');
@@ -400,11 +412,6 @@ class AttendanceStorage {
     if (!student) {
       throw new Error(`รหัสนักศึกษา ${studentId} ไม่ได้ลงทะเบียนในรายวิชานี้`);
     }
-
-    // Check if names match reasonably (optional but good for safety validation)
-    const storedLastName = student.full_name.split(' ').pop();
-    const inputLastName = studentName.split(' ').pop();
-    // (A very basic match: check if student ID exists, name matches at least partially)
 
     // Check already checked in
     const records = this.getRecordsBySession(session.id);
@@ -445,7 +452,8 @@ class AttendanceStorage {
         checkin_time: now.toISOString(),
         status: checkinStatus,
         checkin_method: 'QR Code',
-        note: checkinStatus === 'Late' ? `มาเรียนสาย (${Math.ceil(minutesDiff)} นาที)` : ''
+        note: checkinStatus === 'Late' ? `มาเรียนสาย (${Math.ceil(minutesDiff)} นาที)` : '',
+        gps_coords: gpsCoords
       };
     } else {
       recordToSave = {

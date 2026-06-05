@@ -9,14 +9,16 @@
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="css/style.css">
   
-  <!-- CDNs for QR Code & Interactive Charts -->
+  <!-- CDNs for QR Code, Camera QR Scanner & Interactive Charts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nOMdBqccxHeHZa5fG89jUY5SJiFoVyVYf89jh90hN51g8BPac5q5aTA72EKNXTARJHwTDAWFiCGQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
   <!-- App Wrapper Shell -->
   <div class="app-container">
+    <div class="sidebar-backdrop" id="app-sidebar-backdrop"></div>
     
     <!-- Sidebar Navigation Console -->
     <aside class="sidebar" id="app-sidebar">
@@ -87,7 +89,7 @@
           <button class="btn btn-secondary btn-sm" onclick="window.toggleDarkMode()" style="padding: 0.5rem; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 1px solid var(--color-chalk-dark);" title="สลับโหมดมืด/สว่าง">🌓</button>
           <div class="user-badge">
             <div class="user-avatar">AJ</div>
-            <span class="user-name">อาจารย์ผู้สอน (Lab Room)</span>
+            <span class="user-name hidden-mobile">อาจารย์ผู้สอน (Lab Room)</span>
           </div>
         </div>
       </header>

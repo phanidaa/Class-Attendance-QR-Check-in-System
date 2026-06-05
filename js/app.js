@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-close sidebar on mobile after selecting a menu item
     if (window.innerWidth <= 768) {
       document.getElementById('app-sidebar').classList.remove('show');
+      document.getElementById('app-sidebar-backdrop').classList.remove('show');
     }
   };
 
@@ -128,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (mobileToggleBtn) {
     mobileToggleBtn.addEventListener('click', () => {
       document.getElementById('app-sidebar').classList.add('show');
+      document.getElementById('app-sidebar-backdrop').classList.add('show');
     });
   }
 
@@ -135,12 +137,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (e) => {
     const sidebar = document.getElementById('app-sidebar');
     const mobileBtn = document.getElementById('btn-mobile-menu');
+    const backdrop = document.getElementById('app-sidebar-backdrop');
     
     if (window.innerWidth <= 768 && 
         sidebar.classList.contains('show') && 
         !sidebar.contains(e.target) && 
         !mobileBtn.contains(e.target)) {
       sidebar.classList.remove('show');
+      backdrop.classList.remove('show');
     }
   });
 

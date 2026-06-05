@@ -1,0 +1,13 @@
+{
+  "name": "class-attendance-qr-checkin",
+  "version": "1.0.0",
+  "description": "Class Attendance QR Check-in System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

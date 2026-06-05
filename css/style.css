@@ -1006,3 +1006,140 @@ select.form-control {
   color: var(--color-crimson);
   margin-bottom: 0.75rem;
 }
+
+/* Sidebar backdrop on mobile overlay */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 95;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+}
+
+.sidebar-backdrop.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* General hidden mobile utility */
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+}
+
+/* QR Monitor Modal responsive layout */
+.qr-monitor-layout {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .qr-monitor-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Reports Page quick stats grid */
+.report-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .report-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .report-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .report-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Clickable Interactive Tab Cards */
+.stat-tab-card {
+  background-color: var(--color-card-bg);
+  padding: 0.8rem;
+  border-radius: var(--radius-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--color-chalk-dark);
+  user-select: none;
+}
+
+.stat-tab-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-crimson);
+}
+
+.stat-tab-card.active {
+  background-color: var(--color-crimson-light);
+  border-color: var(--color-crimson);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Filters responsiveness - stack on mobile */
+.filter-item-status {
+  max-width: 150px;
+}
+
+.filter-item-search {
+  flex: 1.5;
+  min-width: 200px;
+}
+
+@media (max-width: 600px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-item {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+  }
+}
+
+/* Table styling for mobile viewport */
+@media (max-width: 600px) {
+  .custom-table th, .custom-table td {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  .modal-body {
+    padding: 1rem;
+  }
+  .modal-header, .modal-footer {
+    padding: 1rem;
+  }
+  .items-list-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .student-checkin-wrapper {
+    margin: 1.5rem auto;
+  }
+}

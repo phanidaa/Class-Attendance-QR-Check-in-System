@@ -48,7 +48,7 @@ const CoursesView = {
                   <div>ภาคเรียน: ${c.semester}/${c.academic_year}</div>
                   <div>อาจารย์: ${c.teacher_name}</div>
                   <div class="mt-2" style="display: flex; gap: 0.75rem; font-size: 0.8rem; font-weight: 600;">
-                    <span style="color: var(--color-crimson);">${students.length} นักศึกษา</span>
+                    <span style="color: var(--color-crimson);">${students.length} / ${c.max_students || 40} คน (ความจุ)</span>
                     <span style="color: var(--color-text-muted);">${sessions.length} คาบเรียน</span>
                   </div>
                 </div>
@@ -92,6 +92,12 @@ const CoursesView = {
                   <input class="form-control" type="text" id="c-section" placeholder="เช่น Sec 1" required />
                 </div>
                 <div class="form-group">
+                  <label class="form-label" for="c-max-students">จำนวนนักเรียนสูงสุด (Capacity)</label>
+                  <input class="form-control" type="number" id="c-max-students" min="1" max="500" value="40" required />
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
                   <label class="form-label" for="c-semester">ภาคเรียน (Semester)</label>
                   <select class="form-control" id="c-semester" required>
                     <option value="1">ภาคเรียนที่ 1</option>
@@ -99,16 +105,14 @@ const CoursesView = {
                     <option value="3">ภาคเรียนฤดูร้อน</option>
                   </select>
                 </div>
-              </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">
                   <label class="form-label" for="c-year">ปีการศึกษา (Academic Year)</label>
                   <input class="form-control" type="number" id="c-year" value="${new Date().getFullYear() + 543}" required />
                 </div>
-                <div class="form-group">
-                  <label class="form-label" for="c-teacher">อาจารย์ผู้สอน</label>
-                  <input class="form-control" type="text" id="c-teacher" placeholder="ชื่อผู้สอน" required />
-                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="c-teacher">อาจารย์ผู้สอน</label>
+                <input class="form-control" type="text" id="c-teacher" placeholder="ชื่อผู้สอน" required />
               </div>
             </div>
             <div class="modal-footer">
@@ -135,6 +139,7 @@ const CoursesView = {
     document.getElementById('course-modal-title').innerText = 'เพิ่มรายวิชาใหม่';
     document.getElementById('course-form').reset();
     document.getElementById('c-year').value = new Date().getFullYear() + 543;
+    document.getElementById('c-max-students').value = 40;
     this.modalController.open();
   },
 
@@ -148,6 +153,7 @@ const CoursesView = {
     document.getElementById('c-code').value = course.course_code;
     document.getElementById('c-name').value = course.course_name;
     document.getElementById('c-section').value = course.section;
+    document.getElementById('c-max-students').value = course.max_students || 40;
     document.getElementById('c-semester').value = course.semester.split('/')[0];
     document.getElementById('c-year').value = course.academic_year;
     document.getElementById('c-teacher').value = course.teacher_name;
@@ -162,6 +168,7 @@ const CoursesView = {
       course_code: document.getElementById('c-code').value.trim(),
       course_name: document.getElementById('c-name').value.trim(),
       section: document.getElementById('c-section').value.trim(),
+      max_students: parseInt(document.getElementById('c-max-students').value) || 40,
       semester: document.getElementById('c-semester').value + '/' + document.getElementById('c-year').value,
       academic_year: document.getElementById('c-year').value.trim(),
       teacher_name: document.getElementById('c-teacher').value.trim()

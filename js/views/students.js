@@ -18,6 +18,7 @@ const StudentsView = {
     }
 
     const enrolledStudents = this.selectedCourseId ? window.db.getStudentsByCourse(this.selectedCourseId) : [];
+    const activeCourse = courses.find(c => c.id === this.selectedCourseId);
 
     const content = `
       <div class="content-card mb-3">
@@ -40,7 +41,7 @@ const StudentsView = {
         </div>
         
         <div class="filter-row mt-2">
-          <div class="filter-item">
+          <div class="filter-item" style="flex: 2;">
             <label class="form-label" style="font-weight: 700;">กรองตามรายวิชาที่เลือก</label>
             <select class="form-control" id="student-course-select" onchange="StudentsView.handleCourseFilter(this.value)">
               ${courses.map(c => `
@@ -51,6 +52,14 @@ const StudentsView = {
               ${courses.length === 0 ? '<option value="">-- ยังไม่มีข้อมูลวิชาเรียน --</option>' : ''}
             </select>
           </div>
+          ${activeCourse ? `
+            <div class="filter-item" style="flex: 1; min-width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
+              <span class="text-muted" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem;">ยอดลงทะเบียนเรียน</span>
+              <div style="background-color: var(--color-chalk); border: 1px solid var(--color-chalk-dark); padding: 0.6rem 1rem; border-radius: var(--radius-md); font-weight: 700; font-size: 0.95rem; text-align: center; color: var(--color-crimson);">
+                ${enrolledStudents.length} / ${activeCourse.max_students || 40} คน
+              </div>
+            </div>
+          ` : ''}
         </div>
       </div>
 

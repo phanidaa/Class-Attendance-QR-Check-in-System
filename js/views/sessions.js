@@ -49,10 +49,10 @@ const SessionsView = {
             }
           </div>
         ` : [...sessions].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).map(s => {
-          const course = courseMap[s.course_id] || { course_code: 'ERR', course_name: 'Unknown' };
+          const course = courseMap[s.course_id] || { course_code: 'ERR', course_name: 'Unknown', max_students: 40 };
           const sessionRecords = records.filter(r => r.session_id === s.id);
-          const totalStudents = sessionRecords.length;
           const checkedIn = sessionRecords.filter(r => r.status === 'Present' || r.status === 'Late').length;
+          const capacity = course.max_students || 40;
 
           let badgeClass = 'badge-closed';
           let statusTh = 'ปิดเช็คชื่อ';
@@ -74,7 +74,7 @@ const SessionsView = {
                   
                   <div class="mt-2" style="background-color: var(--color-chalk); border-radius: var(--radius-sm); padding: 0.4rem 0.75rem; display: flex; align-items: center; justify-content: space-between;">
                     <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted);">เข้าเรียนแล้ว</span>
-                    <span style="font-size: 0.85rem; font-weight: 800; color: var(--color-present);">${checkedIn} / ${totalStudents} คน</span>
+                    <span style="font-size: 0.85rem; font-weight: 800; color: var(--color-present);">${checkedIn} / ${capacity} คน</span>
                   </div>
                 </div>
               </div>
@@ -165,7 +165,7 @@ const SessionsView = {
             </button>
           </div>
           
-          <div class="modal-body" style="padding: 1.5rem; display: grid; grid-template-columns: 1.1fr 1fr; gap: 2rem; align-items: start;">
+          <div class="modal-body qr-monitor-layout">
             
             <!-- Left Side: QR Display & Session Codes -->
             <div class="qr-display-container" style="background-color: white; border-radius: var(--radius-lg); border: 1px solid var(--color-chalk-dark); padding: 2rem 1.5rem;">
@@ -380,8 +380,10 @@ const SessionsView = {
         .filter(r => r.checkin_time !== '')
         .sort((a, b) => new Date(b.checkin_time) - new Date(a.checkin_time)); // newest first
 
-      // Update count ratio
-      document.getElementById('live-checkin-ratio').innerText = `${checkedInRecs.length} / ${allRecords.length} คน`;
+      // Update count ratio based on course capacity
+      const course = window.db.getCourseById(s.course_id);
+      const capacity = course ? (course.max_students || 40) : 40;
+      document.getElementById('live-checkin-ratio').innerText = `${checkedInRecs.length} / ${capacity} คน`;
 
       // Render Feed list
       const feedContainer = document.getElementById('live-feed-list');
